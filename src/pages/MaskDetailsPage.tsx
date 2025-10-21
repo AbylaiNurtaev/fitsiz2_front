@@ -11,6 +11,11 @@ const fieldLabels: Record<string, string> = {
   shadeRange: "Диапазон затемнения",
   weight: "Вес",
   material: "Материал",
+  price: "Цена",
+  link: "Ссылка",
+  installment: "Рассрочка",
+  size: "Размер",
+  days: "Дни",
   batteryIndicator: "Индикатор батареи",
   hdColorTech: "HD Color Tech",
   memoryModes: "Режимы памяти",
@@ -120,11 +125,36 @@ const MaskDetails: React.FC = () => {
           <div className="space-y-3">
             {Object.entries(fieldLabels).map(([key, label]) => {
               const value = (mask as any)[key];
-              if (!value) return null;
+              if (value === null || value === undefined || value === '') return null;
+              
+              // Форматирование значений
+              let displayValue = value;
+              if (key === 'price' && typeof value === 'number') {
+                displayValue = `${value.toLocaleString()} ₽`;
+              } else if (key === 'weight' && typeof value === 'number') {
+                displayValue = `${value} г`;
+              } else if (key === 'days' && typeof value === 'number') {
+                displayValue = `${value} дней`;
+              } else if (key === 'link' && typeof value === 'string') {
+                return (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-sm text-white">{label}</span>
+                    <a 
+                      href={value} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-green-400 hover:text-green-300 underline"
+                    >
+                      Перейти
+                    </a>
+                  </div>
+                );
+              }
+              
               return (
                 <div key={key} className="flex justify-between">
                   <span className="text-sm text-white">{label}</span>
-                  <span className="text-sm text-white">{value}</span>
+                  <span className="text-sm text-white">{displayValue}</span>
                 </div>
               );
             })}

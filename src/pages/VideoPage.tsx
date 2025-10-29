@@ -12,12 +12,8 @@ const VideoPage: React.FC = () => {
       .getVideos()
       .then((data: VideoType[]) => {
         setVideos(data);
-        setLoading(false);
       })
-      .catch((error) => {
-        console.error("Ошибка загрузки видео:", error);
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {

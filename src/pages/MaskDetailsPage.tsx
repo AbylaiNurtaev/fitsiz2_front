@@ -44,14 +44,10 @@ const MaskDetails: React.FC = () => {
     if (id) {
       api
         .getMaskDetails(parseInt(id))
-        .then((data: MasksType) => {
+        .then((data: MasksType | null) => {
           setMask(data);
-          setLoading(false);
         })
-        .catch((error) => {
-          console.error("Ошибка загрузки деталей маски:", error);
-          setLoading(false);
-        });
+        .finally(() => setLoading(false));
     }
   }, [id]);
 

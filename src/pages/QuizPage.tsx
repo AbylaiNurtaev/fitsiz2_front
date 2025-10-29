@@ -32,7 +32,10 @@ const QuizPage: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error("Ошибка при обновлении профиля:", err);
+      // Ошибка обработана тихо
+      if (import.meta.env.DEV) {
+        console.error("Ошибка при обновлении профиля:", err);
+      }
     }
   };
 

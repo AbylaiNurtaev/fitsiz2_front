@@ -20,37 +20,34 @@ const ProfilePage: React.FC = () => {
       // 1) Загрузка данных пользователя
       api.getUser(user.telegramId.toString())
         .then((fetchedUser) => {
-          console.log("Fetched user:", fetchedUser); // ДОБАВИТЬ
-          setPhone(fetchedUser.phone || "");
-          setEmail(fetchedUser.email || "");
-          setSelectedMaskId(fetchedUser.maskId || null);
-        })
-        .catch((error) => {
-          console.error("Ошибка получения пользователя:", error);
+          if (fetchedUser) {
+            if (import.meta.env.DEV) {
+              console.log("Fetched user:", fetchedUser);
+            }
+            setPhone(fetchedUser.phone || "");
+            setEmail(fetchedUser.email || "");
+            setSelectedMaskId(fetchedUser.maskId || null);
+          }
         });
   
       // 2) Загрузка всех доступных масок
       api.getMasks()
         .then((allMasks) => {
-          console.log("All masks:", allMasks); // ДОБАВИТЬ
+          if (import.meta.env.DEV) {
+            console.log("All masks:", allMasks);
+          }
           setMasks(Array.isArray(allMasks) ? allMasks : []);
-        })
-        .catch((error) => {
-          console.error("Ошибка загрузки масок:", error);
-          setMasks([]);
         });
   
       // 3) Загрузка масок пользователя
       api.getUserMasks(user.telegramId.toString())
         .then((userMaskList) => {
-          console.log("User masks from API:", userMaskList); // ДОБАВИТЬ
-          console.log("Is array?", Array.isArray(userMaskList)); // ДОБАВИТЬ
-          console.log("Length:", userMaskList?.length); // ДОБАВИТЬ
+          if (import.meta.env.DEV) {
+            console.log("User masks from API:", userMaskList);
+            console.log("Is array?", Array.isArray(userMaskList));
+            console.log("Length:", userMaskList?.length);
+          }
           setUserMasks(Array.isArray(userMaskList) ? userMaskList : []);
-        })
-        .catch((error) => {
-          console.error("Ошибка загрузки пользовательских масок:", error);
-          setUserMasks([]);
         })
         .finally(() => setLoading(false));
     } else {
@@ -59,17 +56,23 @@ const ProfilePage: React.FC = () => {
   }, [user?.telegramId]);
   
   
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (user && user.telegramId) {
       setLoading(true);
-      api.updateProfile(user.telegramId, phone, email)
-        .then(() => api.getUser(user.telegramId.toString()))
-        .then((updatedUser) => {
+      try {
+        await api.updateProfile(user.telegramId, phone, email);
+        const updatedUser = await api.getUser(user.telegramId.toString());
+        if (updatedUser) {
           setUser(updatedUser);
           navigate("/welcome");
-        })
-        .catch((error) => console.error("Ошибка обновления профиля:", error))
-        .finally(() => setLoading(false));
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error("Ошибка обновления профиля:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -160,12 +163,10 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      try {
-        await api.addUserMask(user.telegramId, selectedMaskId);
+      const success = await api.addUserMask(user.telegramId, selectedMaskId);
+      if (success) {
         const updatedUserMasks = await api.getUserMasks(user.telegramId);
         setUserMasks(Array.isArray(updatedUserMasks) ? updatedUserMasks : []);
-      } catch (error) {
-        console.log(error);
       }
     }}
   >

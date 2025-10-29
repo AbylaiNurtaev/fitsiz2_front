@@ -18,12 +18,10 @@ const MaskPage: React.FC = () => {
           // Filter masks to show only the one associated with the user
           const userMask = data.filter((mask) => mask.id === user.maskId);
           setMasks(userMask);
-          setLoading(false);
         })
-        .catch((error) => {
-          console.error("Ошибка загрузки масок:", error);
-          setLoading(false);
-        });
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, [user]);
 

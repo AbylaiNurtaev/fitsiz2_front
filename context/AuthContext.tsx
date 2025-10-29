@@ -30,10 +30,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const handleLogin = (tgUser: any) => {
-      api
-        .registerUser(tgUser.id.toString(), tgUser.first_name || tgUser.username || "User")
-        .then((registeredUser) => {
+    const handleLogin = async (tgUser: any) => {
+      try {
+        const registeredUser = await api.registerUser(
+          tgUser.id.toString(),
+          tgUser.first_name || tgUser.username || "User"
+        );
+
+        if (registeredUser) {
           setUser({
             ...registeredUser, // то, что вернул твой бэк
             telegramId: tgUser.id.toString(),
@@ -42,10 +46,29 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             photoUrl: tgUser.photo_url,   // 👈 нормализованное поле
             photo_url: tgUser.photo_url,  // 👈 оставляем и оригинал
           });
-        })
-        .catch((error) => {
-          console.error("User context login error:", error.message);
+        } else {
+          // Если регистрация не удалась, используем базовые данные Telegram
+          setUser({
+            telegramId: tgUser.id.toString(),
+            first_name: tgUser.first_name,
+            username: tgUser.username,
+            photoUrl: tgUser.photo_url,
+            photo_url: tgUser.photo_url,
+          });
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error("User context login error:", error);
+        }
+        // Даже при ошибке устанавливаем базовые данные пользователя
+        setUser({
+          telegramId: tgUser.id.toString(),
+          first_name: tgUser.first_name,
+          username: tgUser.username,
+          photoUrl: tgUser.photo_url,
+          photo_url: tgUser.photo_url,
         });
+      }
     };
     
 
@@ -53,7 +76,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (tg) {
       const initData = tg.initDataUnsafe;
       if (initData?.user) {
-        console.log("Telegram WebApp user in context:", initData.user);
+        if (import.meta.env.DEV) {
+          console.log("Telegram WebApp user in context:", initData.user);
+        }
         handleLogin(initData.user);
         return;
       }
@@ -73,7 +98,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         : null;
 
       if (user) {
-        console.log("User from tgWebAppData in URL:", user);
+        if (import.meta.env.DEV) {
+          console.log("User from tgWebAppData in URL:", user);
+        }
         handleLogin(user);
         return;
       }
@@ -88,7 +115,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         "https://t.me/i/userpic/320/ArOpXH92rj_EpmqJ6uB_-vEugbCinOd3VU8tLlkf5DSxI8r40DuBCgyZH4VxImpQ.svg",
     };
 
-    console.log("Using hardcoded user in context");
+    if (import.meta.env.DEV) {
+      console.log("Using hardcoded user in context");
+    }
     handleLogin(hardcodedUser);
   }, []);
 

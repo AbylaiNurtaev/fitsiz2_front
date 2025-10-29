@@ -16,12 +16,8 @@ const VideoDetail: React.FC = () => {
         .then((data: VideoType[]) => {
           const foundVideo = data.find((v) => v.id === parseInt(id));
           setVideo(foundVideo || null);
-          setLoading(false);
         })
-        .catch((error) => {
-          console.error("Ошибка загрузки видео:", error);
-          setLoading(false);
-        });
+        .finally(() => setLoading(false));
     }
   }, [id]);
 

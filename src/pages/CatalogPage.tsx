@@ -13,12 +13,8 @@ const CatalogPage: React.FC = () => {
       .then((data: MasksType[]) => {
         // Split masks into popular (first 4) and recommended (rest)
         setPopularProducts(data);
-        setLoading(false);
       })
-      .catch((error) => {
-        console.error("Ошибка загрузки каталога:", error);
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, []);
 
   const handleProductClick = (id: number) => {

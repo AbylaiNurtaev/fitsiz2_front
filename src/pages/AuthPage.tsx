@@ -11,25 +11,44 @@ const AuthPage: React.FC = () => {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
   
-    const handleLogin = (tgUser: any) => {
-      api
-        .registerUser(
+    const handleLogin = async (tgUser: any) => {
+      try {
+        const registeredUser = await api.registerUser(
           tgUser.id.toString(),
           tgUser.first_name || tgUser.username || "User"
-        )
-        .then((registeredUser) => {
-          // 👇 объединяем данные, чтобы не потерять имя/username/фото
-          setUser({ ...tgUser, ...registeredUser });
-          
-          if (registeredUser.quiz) {
-            navigate("/welcome");
+        );
+        
+        // Если регистрация не удалась, попробуем получить существующего пользователя
+        if (!registeredUser) {
+          const existingUser = await api.getUser(tgUser.id.toString());
+          if (existingUser) {
+            setUser({ ...tgUser, ...existingUser });
+            if (existingUser.quiz) {
+              navigate("/welcome");
+            } else {
+              navigate("/quiz");
+            }
           } else {
+            // Если ни регистрация, ни получение не удались - используем базовые данные
+            setUser(tgUser);
             navigate("/quiz");
           }
-        })
-        .catch((error) => {
-          console.error("Login error:", error.message);
-        });
+          return;
+        }
+        
+        // 👇 объединяем данные, чтобы не потерять имя/username/фото
+        setUser({ ...tgUser, ...registeredUser });
+        
+        if (registeredUser.quiz) {
+          navigate("/welcome");
+        } else {
+          navigate("/quiz");
+        }
+      } catch (error) {
+        // Даже при ошибке продолжаем с базовыми данными пользователя
+        setUser(tgUser);
+        navigate("/quiz");
+      }
     };
     
   
@@ -40,26 +59,32 @@ const AuthPage: React.FC = () => {
         tg.setHeaderColor("#000000");
       } else {
         tg.expand();
-        console.log(
-          "Bot API ниже 8.0, используется expand(). Текущая версия Telegram:",
-          tg.version
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            "Bot API ниже 8.0, используется expand(). Текущая версия Telegram:",
+            tg.version
+          );
+        }
       }
   
       const initData = tg.initDataUnsafe;
-      console.log("Telegram initData:", JSON.stringify(initData, null, 2));
+      if (import.meta.env.DEV) {
+        console.log("Telegram initData:", JSON.stringify(initData, null, 2));
+      }
   
       if (initData?.user) {
-        console.log("User data extracted:", initData.user);
+        if (import.meta.env.DEV) {
+          console.log("User data extracted:", initData.user);
+        }
         handleLogin(initData.user);
-      } else {
-        console.warn("User data not available in initData");
       }
     } else {
-      console.warn("Telegram.WebApp is not available. Environment:", {
-        windowLocation: window.location.href,
-        userAgent: navigator.userAgent,
-      });
+      if (import.meta.env.DEV) {
+        console.warn("Telegram.WebApp is not available. Environment:", {
+          windowLocation: window.location.href,
+          userAgent: navigator.userAgent,
+        });
+      }
   
       // Попробуем получить данные из tgWebAppData в URL (например, при открытии в браузере)
       const hash = window.location.hash;
@@ -75,14 +100,16 @@ const AuthPage: React.FC = () => {
           : null;
   
         if (user) {
-          console.log("Extracted user data from tgWebAppData:", user);
+          if (import.meta.env.DEV) {
+            console.log("Extracted user data from tgWebAppData:", user);
+          }
           handleLogin(user);
-        } else {
-          console.warn("No user data in tgWebAppData");
         }
       } else {
         // Хардкод для тестов в браузере
-        console.log("tgWebAppData not found in URL, using hardcoded data");
+        if (import.meta.env.DEV) {
+          console.log("tgWebAppData not found in URL, using hardcoded data");
+        }
         const hardcodedUser = {
           id: "5969166369",
           first_name: "Денис",
